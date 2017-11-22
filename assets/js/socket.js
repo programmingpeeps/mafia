@@ -5,10 +5,11 @@
 // and connect at the socket path in "lib/web/endpoint.ex":
 import {Socket} from "phoenix"
 
-let socket = new Socket("/socket", {params: {token: window.userToken}})
+let socket = new Socket("/socket", {params: {user: 'bowser'}})
 socket.connect()
 
 let channel           = socket.channel("room:lobby", {})
+let dmChannel         = socket.channel("room:bowser", {})
 let chatInput         = document.querySelector("#chat-input")
 let messagesContainer = document.querySelector("#messages")
 
@@ -23,12 +24,19 @@ chatInput.addEventListener("keypress", event => {
 
 channel.on("new_msg", payload => {
   let messageItem = document.createElement("p");
-  messageItem.innerText = `[${Date()}] ${payload.body}`
+  messageItem.innerText = `[${Date()}] ${payload.message}`
+  messagesContainer.appendChild(messageItem)
+})
+
+dmChannel.on("dm_msg", payload => {
+  let messageItem = document.createElement("p");
+  messageItem.innerText = `DM: [${Date()}] ${payload.message}`
   messagesContainer.appendChild(messageItem)
 })
 
 channel.join()
   .receive("ok", resp => { console.log("Joined successfully", resp) })
   .receive("error", resp => { console.log("Unable to join", resp) })
+dmChannel.join()
 
 export default socket

@@ -5,38 +5,61 @@
 // and connect at the socket path in "lib/web/endpoint.ex":
 import {Socket} from "phoenix"
 
-let socket = new Socket("/socket", {params: {user: 'bowser'}})
-socket.connect()
+let socket = null;
 
-let channel           = socket.channel("room:lobby", {})
-let dmChannel         = socket.channel("room:bowser", {})
-let chatInput         = document.querySelector("#chat-input")
-let messagesContainer = document.querySelector("#messages")
+document.querySelector('#user-submit').onclick = () => {
+  let username = document.querySelector('#username').value;
+  if (!username) return;
 
-chatInput.addEventListener("keypress", event => {
-  if(event.keyCode === 13){
-    channel.push("new_msg", {body: chatInput.value})
-    chatInput.value = ""
-    event.stopPropagation()
-    return false
-  }
-})
+  socket = new Socket("/socket", { params: { user: username } });
+  socket.connect();
 
-channel.on("new_msg", payload => {
-  let messageItem = document.createElement("p");
-  messageItem.innerText = `[${Date()}] ${payload.message}`
-  messagesContainer.appendChild(messageItem)
-})
+  let channel = socket.channel("room:lobby", {});
+  let dmChannel = socket.channel(`room:${username}`, {});
+  let chatInput = document.querySelector("#chat-input");
+  let whisperInput = document.querySelector("#bot-input");
+  let messagesContainer = document.querySelector("#messages");
 
-dmChannel.on("dm_msg", payload => {
-  let messageItem = document.createElement("p");
-  messageItem.innerText = `DM: [${Date()}] ${payload.message}`
-  messagesContainer.appendChild(messageItem)
-})
+  chatInput.addEventListener("keypress", event => {
+    if (event.keyCode === 13) {
+      channel.push("new_msg", { body: chatInput.value });
+      chatInput.value = "";
+      event.stopPropagation();
+      return false;
+    }
+  });
 
-channel.join()
-  .receive("ok", resp => { console.log("Joined successfully", resp) })
-  .receive("error", resp => { console.log("Unable to join", resp) })
-dmChannel.join()
+  whisperInput.addEventListener("keypress", event => {
+    if (event.keyCode === 13) {
+      channel.push("dm_msg", { to: "bot", message: whisperInput.value });
+      whisperInput.value = "";
+      event.stopPropagation();
+      return false;
+    }
+  });
 
-export default socket
+  channel.on("new_msg", payload => {
+    let messageItem = document.createElement("p");
+    messageItem.innerText = `[${payload.user}] ${payload.message}`;
+    messagesContainer.appendChild(messageItem);
+  });
+
+  dmChannel.on("dm_msg", payload => {
+    let messageItem = document.createElement("p");
+    messageItem.innerText = `DM [${payload.user}] ${payload.message}`;
+    messagesContainer.appendChild(messageItem);
+  });
+
+  channel
+    .join()
+    .receive("ok", resp => {
+      console.log("Joined successfully", resp);
+    })
+    .receive("error", resp => {
+      console.log("Unable to join", resp);
+    });
+  dmChannel.join();
+
+}
+
+export default socket;

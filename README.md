@@ -1,5 +1,7 @@
 # Hello
 
+Architecture: [Wireframe](https://wireframe.cc/lkdOlT)
+
 To start your Phoenix server:
 
   * Install dependencies with `mix deps.get`

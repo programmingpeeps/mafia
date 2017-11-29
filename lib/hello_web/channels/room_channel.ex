@@ -14,17 +14,13 @@ defmodule HelloWeb.RoomChannel do
   end
 
   def handle_in("dm_msg", %{"to" => user, "message" => message}, socket) do
-    HelloWeb.Endpoint.broadcast "room:#{user}", "dm_msg", %{message: message}
+    HelloWeb.Endpoint.broadcast "room:#{user}", "dm_msg", %{message: message, user: socket.assigns.username}
     {:noreply, socket}
   end
 
   def handle_in("new_msg", %{"body" => body}, socket) do
-    if socket.assigns.username == "bowser" do
-      {:noreply, socket}
-    else
-      broadcast! socket, "new_msg",
-        %{message: body, user: socket.assigns.username}
-      {:noreply, socket}
-    end
+    broadcast! socket, "new_msg",
+      %{message: body, user: socket.assigns.username}
+    {:noreply, socket}
   end
 end
